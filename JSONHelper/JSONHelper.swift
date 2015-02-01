@@ -182,32 +182,32 @@ public func <<<* <T>(inout array: [T]?, value: AnyObject?) -> [T]? {
   //trying each primitive array to find the matching one
   if let stringArray = value >>> JSONStrings {
     for string in stringArray {
-      var singleValue:T?
-      singleValue <<< (string as AnyObject?)
-      if singleValue != nil {
-        newValue!.append(singleValue!)
+      var stringValue:T?
+      stringValue <<< (string as AnyObject?)
+      if stringValue != nil {
+        newValue!.append(stringValue!)
       } else {
         newValue = nil
         break
       }
     }
-  } else if let stringArray = value >>> JSONBools {
-    for string in stringArray {
-      var singleValue:T?
-      singleValue <<< (string as AnyObject?)
-      if singleValue != nil {
-        newValue!.append(singleValue!)
+  } else if let boolArray = value >>> JSONBools {
+    for bool in boolArray {
+      var boolValue:T?
+      boolValue <<< (bool as AnyObject?)
+      if boolValue != nil {
+        newValue!.append(boolValue!)
       } else {
         newValue = nil
         break
       }
     }
-  } else if let stringArray = value >>> JSONInts {
-    for string in stringArray {
-      var singleValue:T?
-      singleValue <<< (string as AnyObject?)
-      if singleValue != nil {
-        newValue!.append(singleValue!)
+  } else if let intArray = value >>> JSONInts {
+    for int in intArray {
+      var intValue:T?
+      intValue <<< (int as AnyObject?)
+      if intValue != nil {
+        newValue!.append(intValue!)
       } else {
         newValue = nil
         break
