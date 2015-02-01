@@ -11,6 +11,8 @@ import XCTest
 import JSONHelper
 
 class JSONHelperTests: XCTestCase {
+  let dateFormatExample = "yyyy-MM-dd"
+  
   let dummyResponse = [
     "string": "a",
     "int": 1,
@@ -21,6 +23,8 @@ class JSONHelperTests: XCTestCase {
     "stringArray": ["a", "b", "c"],
     "intArray": [1, 2, 3, 4, 5],
     "boolArray": [true, false],
+    "dateArray": ["2014-09-19", "2014-09-20"],
+    "dateArrayWithWrongFormat": ["2014-09-19", "2014-09-a"],
     "stringMap": ["m": "a", "n": "b", "o": "c"],
     "intMap": ["m": 1, "n": 2, "o": 3, "p": 4, "q": 5],
     "boolMap": ["m": true, "n": false],
@@ -118,7 +122,7 @@ class JSONHelperTests: XCTestCase {
     var property: NSDate?
     property <<< (value: dummyResponse["date"], format: "yyyy-MM-dd")
     let dateFormatter = NSDateFormatter()
-    dateFormatter.dateFormat = "yyyy-MM-dd"
+    dateFormatter.dateFormat = dateFormatExample
     let testDate = dateFormatter.dateFromString("2014-09-19")
     XCTAssertEqual(property!.compare(testDate!), NSComparisonResult.OrderedSame, "NSDate? property should equal 2014-09-19")
     property <<< dummyResponse["invalidKey"]
@@ -130,9 +134,9 @@ class JSONHelperTests: XCTestCase {
     dateFormatter.dateFormat = "yyyy-MM-dd"
     let defaultTestDate = dateFormatter.dateFromString("2015-09-19")
     var property = defaultTestDate!
-    property <<< (value: dummyResponse["invalidKey"], format: "yyyy-MM-dd")
+    property <<< (value: dummyResponse["invalidKey"], format: dateFormatExample)
     XCTAssertEqual(property.compare(defaultTestDate!), NSComparisonResult.OrderedSame, "NSDate should have the default value 2015-09-19")
-    property <<< (value: dummyResponse["date"], format: "yyyy-MM-dd")
+    property <<< (value: dummyResponse["date"], format: dateFormatExample)
     let testDate = dateFormatter.dateFromString("2014-09-19")
     XCTAssertEqual(property.compare(testDate!), NSComparisonResult.OrderedSame, "NSDate should have the value 2015-09-19")
   }
@@ -164,11 +168,23 @@ class JSONHelperTests: XCTestCase {
     property <<<* dummyResponse["intArray"]
     XCTAssertEqual(property.count, 5, "[Int] property should have 5 members")
   }
-
+  
   func testBoolArray() {
     var property = [Bool]()
     property <<<* dummyResponse["boolArray"]
     XCTAssertEqual(property.count, 2, "[Bool] property should have 2 members")
+  }
+  
+  func testDateArray() {
+    var property = [NSDate]()
+    property <<<* (value: dummyResponse["dateArray"], format: dateFormatExample)
+    XCTAssertEqual(property.count, 2, "[NSDate] property should have 2 members")
+  }
+  
+  func testdateArrayWithWrongFormat() {
+    var property = [NSDate]()
+    property <<<* (value: dummyResponse["dateArrayWithWrongFormat"], format: dateFormatExample)
+    XCTAssertEqual(property.count, 0, "parsing should have failed")
   }
 
   func testStringMap() {

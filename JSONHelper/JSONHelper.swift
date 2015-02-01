@@ -88,6 +88,10 @@ public func JSONObjectsMap(object: AnyObject?) -> [String: [String: AnyObject]]?
     return object as? [String: [String: AnyObject]]
 }
 
+//MARK: Helper methods for NSDate
+
+
+
 // Operator for use in "if let" conversions.
 infix operator >>> { associativity left precedence 150 }
 
@@ -146,25 +150,23 @@ public func <<< <T>(inout property: T, value: AnyObject?) -> T {
 }
 
 // Special handling for value and format pair to NSDate conversion.
-public func <<< (inout property: NSDate?, valueAndFormat: (value: AnyObject?, format: AnyObject?)) -> NSDate? {
+public func <<< (inout property: NSDate?, valueAndFormat: (value: AnyObject?, format: String)) -> NSDate? {
   var newValue: NSDate?
 
   if let dateString = valueAndFormat.value >>> JSONString {
 
-    if let formatString = valueAndFormat.format >>> JSONString {
-      let dateFormatter = NSDateFormatter()
-      dateFormatter.dateFormat = formatString
+    let dateFormatter = NSDateFormatter()
+      dateFormatter.dateFormat = valueAndFormat.format
 
       if let newDate = dateFormatter.dateFromString(dateString) {
         newValue = newDate
       }
     }
-  }
   property = newValue
   return property
 }
 
-public func <<< (inout property: NSDate, valueAndFormat: (value: AnyObject?, format: AnyObject?)) -> NSDate {
+public func <<< (inout property: NSDate, valueAndFormat: (value: AnyObject?, format: String)) -> NSDate {
   var date: NSDate?
   date <<< valueAndFormat
   if let date = date { property = date }
@@ -175,130 +177,69 @@ public func <<< (inout property: NSDate, valueAndFormat: (value: AnyObject?, for
 
 infix operator <<<* { associativity right precedence 150 }
 
-public func <<<* (inout array: [String]?, value: AnyObject?) -> [String]? {
-
+public func <<<* <T>(inout array: [T]?, value: AnyObject?) -> [T]? {
+  var newValue:[T]? = [T]()
+  //trying each primitive array to find the matching one
   if let stringArray = value >>> JSONStrings {
-    array = stringArray
-  } else {
-    array = nil
-  }
-  return array
-}
-
-public func <<<* (inout array: [String], value: AnyObject?) -> [String] {
-  var newValue: [String]?
-  newValue <<<* value
-  if let newValue = newValue { array = newValue }
-  return array
-}
-
-public func <<<* (inout array: [Int]?, value: AnyObject?) -> [Int]? {
-
-  if let intArray = value >>> JSONInts {
-    array = intArray
-  } else {
-    array = nil
-  }
-  return array
-}
-
-public func <<<* (inout array: [Int], value: AnyObject?) -> [Int] {
-  var newValue: [Int]?
-  newValue <<<* value
-  if let newValue = newValue { array = newValue }
-  return array
-}
-
-public func <<<* (inout array: [Float]?, value: AnyObject?) -> [Float]? {
-
-  if let floatArray = value as? [Float] {
-    array = floatArray
-  } else {
-    array = nil
-  }
-  return array
-}
-
-public func <<<* (inout array: [Float], value: AnyObject?) -> [Float] {
-  var newValue: [Float]?
-  newValue <<<* value
-  if let newValue = newValue { array = newValue }
-  return array
-}
-
-public func <<<* (inout array: [Double]?, value: AnyObject?) -> [Double]? {
-
-  if let doubleArrayDoubleExcitement = value as? [Double] {
-    array = doubleArrayDoubleExcitement
-  } else {
-    array = nil
-  }
-  return array
-}
-
-public func <<<* (inout array: [Double], value: AnyObject?) -> [Double] {
-  var newValue: [Double]?
-  newValue <<<* value
-  if let newValue = newValue { array = newValue }
-  return array
-}
-
-public func <<<* (inout array: [Bool]?, value: AnyObject?) -> [Bool]? {
-
-  if let boolArray = value >>> JSONBools {
-    array = boolArray
-  } else {
-    array = nil
-  }
-  return array
-}
-
-public func <<<* (inout array: [Bool], value: AnyObject?) -> [Bool] {
-  var newValue: [Bool]?
-  newValue <<<* value
-  if let newValue = newValue { array = newValue }
-  return array
-}
-
-public func <<<* (inout array: [NSURL]?, value: AnyObject?) -> [NSURL]? {
-
-  if let stringURLArray = value >>> JSONStrings {
-    array = [NSURL]()
-
-    for stringURL in stringURLArray {
-
-      if let url = NSURL(string: stringURL) {
-        array!.append(url)
+    for string in stringArray {
+      var singleValue:T?
+      singleValue <<< (string as AnyObject?)
+      if singleValue != nil {
+        newValue!.append(singleValue!)
+      } else {
+        newValue = nil
+        break
       }
     }
-  } else {
-    array = nil
+  } else if let stringArray = value >>> JSONBools {
+    for string in stringArray {
+      var singleValue:T?
+      singleValue <<< (string as AnyObject?)
+      if singleValue != nil {
+        newValue!.append(singleValue!)
+      } else {
+        newValue = nil
+        break
+      }
+    }
+  } else if let stringArray = value >>> JSONInts {
+    for string in stringArray {
+      var singleValue:T?
+      singleValue <<< (string as AnyObject?)
+      if singleValue != nil {
+        newValue!.append(singleValue!)
+      } else {
+        newValue = nil
+        break
+      }
+    }
   }
+  array = newValue
   return array
 }
-
-public func <<<* (inout array: [NSURL], value: AnyObject?) -> [NSURL] {
-  var newValue: [NSURL]?
+// For non-optionals.
+public func <<<* <T>(inout property: [T], value: AnyObject?) -> [T] {
+  var newValue: [T]?
   newValue <<<* value
-  if let newValue = newValue { array = newValue }
-  return array
+  if let newValue = newValue { property = newValue }
+  return property
 }
 
-public func <<<* (inout array: [NSDate]?, valueAndFormat: (value: AnyObject?, format: AnyObject?)) -> [NSDate]? {
+//#MARK: special handling for date with format
+
+public func <<<* (inout array: [NSDate]?, valueAndFormat: (value: AnyObject?, format: String)) -> [NSDate]? {
   var newValue: [NSDate]?
 
-  if let dateStringArray = valueAndFormat.value >>> JSONStrings {
-
-    if let formatString = valueAndFormat.format >>> JSONString {
-      let dateFormatter = NSDateFormatter()
-      dateFormatter.dateFormat = formatString
-      newValue = [NSDate]()
-
-      for dateString in dateStringArray {
-
-        if let date = dateFormatter.dateFromString(dateString) {
-          newValue!.append(date)
-        }
+  if let dateStringArray = valueAndFormat.value >>> JSONArray {
+    newValue = []
+    for dateString in dateStringArray {
+      var date:NSDate?
+      date <<< (dateString, valueAndFormat.format)
+      if date? != nil {
+        newValue!.append(date!)
+      } else {
+        newValue = nil
+        break
       }
     }
   }
@@ -306,195 +247,90 @@ public func <<<* (inout array: [NSDate]?, valueAndFormat: (value: AnyObject?, fo
   return array
 }
 
-public func <<<* (inout array: [NSDate], valueAndFormat: (value: AnyObject?, format: AnyObject?)) -> [NSDate] {
+public func <<<* (inout array: [NSDate], valueAndFormat: (value: AnyObject?, format: String)) -> [NSDate] {
   var newValue: [NSDate]?
   newValue <<<* valueAndFormat
   if let newValue = newValue { array = newValue }
   return array
 }
 
-public func <<<* (inout array: [NSDate]?, value: AnyObject?) -> [NSDate]? {
+//#MARK: handling maps
 
-  if let timestamps = value as? [AnyObject] {
-    array = [NSDate]()
-
-    for timestamp in timestamps {
-      var date: NSDate?
-      date <<< timestamp
-      if date != nil { array!.append(date!) }
+public func <<<* <T>(inout map: [String:T]?, value: AnyObject?) -> [String:T]? {
+  var newValue:[String:T]? = [String:T]()
+  //trying each primitive array to find the matching one
+  if let stringMap = value >>> JSONStringsMap {
+    for (key, string) in stringMap {
+      var singleValue:T?
+      singleValue <<< (string as AnyObject?)
+      if singleValue != nil {
+        newValue![key] = singleValue!
+      } else {
+        newValue = nil
+        break
+      }
     }
-  } else {
-    array = nil
+  } else if let boolMap = value >>> JSONBoolsMap {
+    for (key, bool) in boolMap {
+      var singleValue:T?
+      singleValue <<< (bool as AnyObject?)
+      if singleValue != nil {
+        newValue![key] = singleValue!
+      } else {
+        newValue = nil
+        break
+      }
+    }
+  } else if let stringArray = value >>> JSONIntsMap {
+    for (key, int) in stringArray {
+      var singleValue:T?
+      singleValue <<< (int as AnyObject?)
+      if singleValue != nil {
+        newValue![key] = singleValue!
+      } else {
+        newValue = nil
+        break
+      }
+    }
   }
+  map = newValue
+  return map
+}
+// For non-optionals.
+public func <<<* <T>(inout property: [String:T], value: AnyObject?) -> [String:T] {
+  var newValue: [String:T]?
+  newValue <<<* value
+  if let newValue = newValue { property = newValue }
+  return property
+}
+
+//#MARK: special handling for date with format
+
+public func <<<* (inout array: [String:NSDate]?, valueAndFormat: (value: AnyObject?, format: String)) -> [String:NSDate]? {
+  var newValue: [String:NSDate]?
+  
+  if let dateStringMap = valueAndFormat.value >>> JSONObject {
+    newValue = [String:NSDate]()
+    for (key, dateString) in dateStringMap {
+      var date:NSDate?
+      date <<< (dateString, valueAndFormat.format)
+      if date? != nil {
+        newValue![key] = date!
+      } else {
+        newValue = nil
+        break
+      }
+    }
+  }
+  array = newValue
   return array
 }
 
-public func <<<* (inout array: [NSDate], value: AnyObject?) -> [NSDate] {
-  var newValue: [NSDate]?
-  newValue <<<* value
+public func <<<* (inout array: [String:NSDate], valueAndFormat: (value: AnyObject?, format: String)) -> [String:NSDate] {
+  var newValue: [String:NSDate]?
+  newValue <<<* valueAndFormat
   if let newValue = newValue { array = newValue }
   return array
-}
-
-public func <<<* (inout dictionary: [String: String]?, value: AnyObject?) -> [String: String]? {
-
-  if let stringDictionary = value >>> JSONStringsMap {
-    dictionary = stringDictionary
-  } else {
-    dictionary = nil
-  }
-  return dictionary
-}
-
-public func <<<* (inout dictionary: [String: String], value: AnyObject?) -> [String: String] {
-  var newValue: [String: String]?
-  newValue <<<* value
-  if let newValue = newValue { dictionary = newValue }
-  return dictionary
-}
-
-public func <<<* (inout dictionary: [String: Int]?, value: AnyObject?) -> [String: Int]? {
-
-  if let intDictionary = value >>> JSONIntsMap {
-    dictionary = intDictionary
-  } else {
-    dictionary = nil
-  }
-  return dictionary
-}
-
-public func <<<* (inout dictionary: [String: Int], value: AnyObject?) -> [String: Int] {
-  var newValue: [String: Int]?
-  newValue <<<* value
-  if let newValue = newValue { dictionary = newValue }
-  return dictionary
-}
-
-public func <<<* (inout dictionary: [String: Float]?, value: AnyObject?) -> [String: Float]? {
-
-  if let floatDictionary = value as? [String: Float] {
-    dictionary = floatDictionary
-  } else {
-    dictionary = nil
-  }
-  return dictionary
-}
-
-public func <<<* (inout dictionary: [String: Float], value: AnyObject?) -> [String: Float] {
-  var newValue: [String: Float]?
-  newValue <<<* value
-  if let newValue = newValue { dictionary = newValue }
-  return dictionary
-}
-
-public func <<<* (inout dictionary: [String: Double]?, value: AnyObject?) -> [String: Double]? {
-
-  if let doubleDictionaryDoubleExcitement = value as? [String: Double] {
-    dictionary = doubleDictionaryDoubleExcitement
-  } else {
-    dictionary = nil
-  }
-  return dictionary
-}
-
-public func <<<* (inout dictionary: [String: Double], value: AnyObject?) -> [String: Double] {
-  var newValue: [String: Double]?
-  newValue <<<* value
-  if let newValue = newValue { dictionary = newValue }
-  return dictionary
-}
-
-public func <<<* (inout dictionary: [String: Bool]?, value: AnyObject?) -> [String: Bool]? {
-
-  if let boolDictionary = value >>> JSONBoolsMap {
-    dictionary = boolDictionary
-  } else {
-    dictionary = nil
-  }
-  return dictionary
-}
-
-public func <<<* (inout dictionary: [String: Bool], value: AnyObject?) -> [String: Bool] {
-  var newValue: [String: Bool]?
-  newValue <<<* value
-  if let newValue = newValue { dictionary = newValue }
-  return dictionary
-}
-
-public func <<<* (inout dictionary: [String: NSURL]?, value: AnyObject?) -> [String: NSURL]? {
-
-  if let stringURLDictionary = value >>> JSONStringsMap {
-    dictionary = [String: NSURL]()
-
-    for (key, stringURL) in stringURLDictionary {
-
-      if let url = NSURL(string: stringURL) {
-        dictionary![key] = url
-      }
-    }
-  } else {
-    dictionary = nil
-  }
-  return dictionary
-}
-
-public func <<<* (inout dictionary: [String: NSURL], value: AnyObject?) -> [String: NSURL] {
-  var newValue: [String: NSURL]?
-  newValue <<<* value
-  if let newValue = newValue { dictionary = newValue }
-  return dictionary
-}
-
-public func <<<* (inout dictionary: [String: NSDate]?, valueAndFormat: (value: AnyObject?, format: AnyObject?)) -> [String: NSDate]? {
-  var newValue: [String: NSDate]?
-
-  if let dateStringDictionary = valueAndFormat.value >>> JSONStringsMap {
-
-    if let formatString = valueAndFormat.format >>> JSONString {
-      let dateFormatter = NSDateFormatter()
-      dateFormatter.dateFormat = formatString
-      newValue = [String: NSDate]()
-
-      for (key, dateString) in dateStringDictionary {
-
-        if let date = dateFormatter.dateFromString(dateString) {
-          newValue![key] = date
-        }
-      }
-    }
-  }
-  dictionary = newValue
-  return dictionary
-}
-
-public func <<<* (inout dictionary: [String: NSDate], valueAndFormat: (value: AnyObject?, format: AnyObject?)) -> [String: NSDate] {
-  var newValue: [String: NSDate]?
-  newValue <<<* valueAndFormat
-  if let newValue = newValue { dictionary = newValue }
-  return dictionary
-}
-
-public func <<<* (inout dictionary: [String: NSDate]?, value: AnyObject?) -> [String: NSDate]? {
-
-  if let timestampsMap = value as? [String: AnyObject] {
-    dictionary = [String: NSDate]()
-
-    for (key, timestamp) in timestampsMap {
-      var date: NSDate?
-      date <<< timestamp
-      if date != nil { dictionary![key] = date! }
-    }
-  } else {
-    dictionary = nil
-  }
-  return dictionary
-}
-
-public func <<<* (inout dictionary: [String: NSDate], value: AnyObject?) -> [String: NSDate] {
-  var newValue: [String: NSDate]?
-  newValue <<<* value
-  if let newValue = newValue { dictionary = newValue }
-  return dictionary
 }
 
 // MARK: - Operator for quick class deserialization.
